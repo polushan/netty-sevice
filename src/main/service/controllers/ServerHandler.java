@@ -1,15 +1,14 @@
 package controllers;
 
+import dao.RequestDao;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import model.Request;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
@@ -19,6 +18,21 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 public class ServerHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     private HttpRequest request;
+    String userId;
+    String externalUserId;
+    String dspId;
+    private RequestDao requestDao;
+
+    {
+        Properties prop = new Properties();
+        prop.setProperty("host", "localhost");
+        prop.setProperty("port", "27017");
+        prop.setProperty("dbname", "admin");
+        prop.setProperty("login", "root");
+        prop.setProperty("password", "root");
+        prop.setProperty("table", "requests");
+        requestDao = new RequestDao(prop);
+    }
 
 
     @Override
@@ -28,9 +42,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
-        String userId;
-        String externalUserId = null;
-        String dspId = null;
         if (msg instanceof HttpRequest) {
             HttpRequest request = this.request = (HttpRequest) msg;
             QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.getUri());
@@ -49,13 +60,16 @@ public class ServerHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
         if (msg instanceof LastHttpContent) {
             userId = getUserId(ctx);
-            saveRequest(userId, externalUserId, dspId);
+            if (dspId != null && externalUserId != null) {
+                saveRequest(dspId, userId, externalUserId);
+            }
             ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
         }
     }
 
-    private void saveRequest(String userId, String externalUserId, String dspId) {
-        //TODO save in mongo db
+    private void saveRequest(String dspId, String userId, String externalUserId) {
+        Request req = new Request(dspId, userId, externalUserId);
+        requestDao.save(req);
     }
 
     private String getUserId(ChannelHandlerContext ctx) {

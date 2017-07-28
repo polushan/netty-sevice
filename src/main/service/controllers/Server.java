@@ -9,7 +9,8 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
 public class Server {
-    private static final int PORT = 8080;
+    private static final String DEFAULT_ADDRESS = "localhost";
+    private static final int DEFAULT_PORT = 8080;
 
     public static void main(String[] args) throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -20,7 +21,9 @@ public class Server {
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ServerInitializer());
-            Channel ch = b.bind(PORT).sync().channel();
+            String address = args.length > 1 ? args[0] : DEFAULT_ADDRESS;
+            int port = args.length > 2 ? Integer.parseInt(args[1]) : DEFAULT_PORT;
+            Channel ch = b.bind(address, port).sync().channel();
             ch.closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully();

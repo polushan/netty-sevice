@@ -1,0 +1,8 @@
+host=localhost
+address=/
+server_port=8080
+port=27017
+dbname=admin
+login=root
+password=root
+table=requests

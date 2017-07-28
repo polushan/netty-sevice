@@ -1,9 +1,11 @@
 import dao.RequestDao;
 import model.Request;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 public class TestDb {
@@ -13,12 +15,11 @@ public class TestDb {
     @Before
     public void setUp() throws Exception {
         Properties prop = new Properties();
-        prop.setProperty("host", "localhost");
-        prop.setProperty("port", "27017");
-        prop.setProperty("dbname", "admin");
-        prop.setProperty("login", "root");
-        prop.setProperty("password", "root");
-        prop.setProperty("table", "requests");
+        try {
+            prop.load(TestDb.class.getClassLoader().getResourceAsStream("config/config.properies"));
+        } catch (IOException e) {
+            System.out.println("can't find config file");
+        }
         mongo = new RequestDao(prop);
     }
 
@@ -26,7 +27,7 @@ public class TestDb {
 
     @Test
     public void testAddUser() throws Exception {
-        mongo.save(new Request("test3", "test2", "test1"));
+        mongo.save(new Request("4444", "444", "421"));
     }
 
 

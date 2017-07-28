@@ -8,6 +8,10 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import model.Request;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaders.Names.*;
@@ -22,15 +26,15 @@ public class ServerHandler extends SimpleChannelInboundHandler<HttpObject> {
     String externalUserId;
     String dspId;
     private RequestDao requestDao;
+    Properties prop;
 
     {
-        Properties prop = new Properties();
-        prop.setProperty("host", "localhost");
-        prop.setProperty("port", "27017");
-        prop.setProperty("dbname", "admin");
-        prop.setProperty("login", "root");
-        prop.setProperty("password", "root");
-        prop.setProperty("table", "requests");
+        prop = new Properties();
+        try {
+            prop.load(ServerHandler.class.getClassLoader().getResourceAsStream("config/config.properies"));
+        } catch (IOException e) {
+            System.out.println("can't find config file");
+        }
         requestDao = new RequestDao(prop);
     }
 
@@ -45,6 +49,9 @@ public class ServerHandler extends SimpleChannelInboundHandler<HttpObject> {
         if (msg instanceof HttpRequest) {
             HttpRequest request = this.request = (HttpRequest) msg;
             QueryStringDecoder queryStringDecoder = new QueryStringDecoder(request.getUri());
+            if (!queryStringDecoder.path().equalsIgnoreCase(prop.getProperty("address"))) {
+                return;
+            }
             Map<String, List<String>> params = queryStringDecoder.parameters();
             if (!params.isEmpty()) {
                 for (Map.Entry<String, List<String>> p: params.entrySet()) {

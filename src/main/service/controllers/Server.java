@@ -8,11 +8,21 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
 public class Server {
-    private static final String DEFAULT_ADDRESS = "localhost";
-    private static final int DEFAULT_PORT = 8080;
+    private static final String DEFAULT_PORT = "8080";
 
     public static void main(String[] args) throws Exception {
+        Properties prop = new Properties();
+        try {
+            prop.load(Server.class.getClassLoader().getResourceAsStream("config/config.properies"));
+        } catch (IOException e) {
+            System.out.println("can't find config file");
+        }
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -21,9 +31,8 @@ public class Server {
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ServerInitializer());
-            String address = args.length > 1 ? args[0] : DEFAULT_ADDRESS;
-            int port = args.length > 2 ? Integer.parseInt(args[1]) : DEFAULT_PORT;
-            Channel ch = b.bind(address, port).sync().channel();
+            int port = Integer.valueOf(prop.getProperty("server_port", DEFAULT_PORT));
+            Channel ch = b.bind(port).sync().channel();
             ch.closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully();
